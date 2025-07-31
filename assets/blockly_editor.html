@@ -7,25 +7,67 @@
 <body>
 <div id="blocklyDiv" style="height: 100vh; width: 100%;"></div>
 <xml id="toolbox" style="display: none">
-    <block type="controls_if"></block>
-    <block type="logic_compare"></block>
-    <block type="math_number"></block>
-    <block type="text"></block>
+    <category name="Logic" colour="#5C81A6">
+        <block type="controls_if"></block>
+        <block type="logic_compare"></block>
+        <block type="logic_operation">
+            <field name="OP">AND</field>
+        </block>
+        <block type="logic_boolean">
+            <field name="BOOL">TRUE</field>
+        </block>
+    </category>
+    <category name="Math" colour="#5CA65C">
+        <block type="math_number"></block>
+    </category>
+    <category name="Text" colour="#5CA68D">
+        <block type="text"></block>
+        <block type="text_print">
+            <value name="TEXT">
+                <shadow type="text">
+                    <field name="TEXT">Hello, World!</field>
+                </shadow>
+            </value>
+        </block>
+    </category>
 </xml>
+
 
 <script>
     const workspace = Blockly.inject('blocklyDiv', {
       toolbox: document.getElementById('toolbox')
     });
 
-    function getGeneratedCode() {
-      const code = Blockly.JavaScript.workspaceToCode(workspace);
-      FlutterChannel.postMessage(code);
+    function getXmlJson() {
+        const xmlDom = Blockly.Xml.workspaceToDom(workspace);
+        const xmlText = Blockly.Xml.domToText(xmlDom);
+        return xmlText;
     }
+
+    function getJavaScriptCode() {
+        return Blockly.JavaScript.workspaceToCode(workspace);
+    }
+
+    function getJavaCode() {
+        let code = '';
+        const blocks = workspace.getTopBlocks(true);
+        blocks.forEach(block => {
+            if (block.type === 'controls_if') {
+                code += 'if (true) {\n  System.out.println("조건문");\n}\n';
+            }
+        });
+        return code;
+    }
+
     window.addEventListener("message", (event) => {
-      if (event.data === "get_code") {
-        getGeneratedCode();
-      }
+        if (event.data === "get_all") {
+            const result = {
+                json: getXmlJson(),       // XML 형식
+                javascript: getJavaScriptCode(), // JS Generator 결과
+                java: getJavaCode()       // 임시 Java Generator 결과
+            };
+            FlutterChannel.postMessage(JSON.stringify(result));
+        }
     });
 </script>
 </body>

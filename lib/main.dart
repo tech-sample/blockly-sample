@@ -1,55 +1,81 @@
-import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:http/http.dart' as http;
 
-void main() => runApp(MyApp());
-
-class MyApp extends StatefulWidget {
-  @override
-  State<MyApp> createState() => _MyAppState();
+void main() {
+  runApp(MyApp());
 }
 
-class _MyAppState extends State<MyApp> {
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: MobileBlocklyPage(),
+      debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class MobileBlocklyPage extends StatefulWidget {
+  @override
+  State<MobileBlocklyPage> createState() => _MobileBlocklyPageState();
+}
+
+class _MobileBlocklyPageState extends State<MobileBlocklyPage> {
   late final WebViewController _controller;
+  String? jsonCode;
+  String? javaCode;
 
   @override
   void initState() {
     super.initState();
-
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..addJavaScriptChannel(
         'FlutterChannel',
         onMessageReceived: (message) {
-          print('📦 받은 Blockly 코드: ${message.message}');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("받은 코드:\n${message.message}")),
-          );
+          final code = json.decode(message.message);
+          setState(() {
+            jsonCode = code['json'];
+            javaCode = code['java'];
+            print('🌐 JavaScript 코드: ${code['javascript']}');
+            print('🧾 Java 코드: ${code['java']}');
+            print('📦 JSON 코드: ${code['json']}');
+          });
+
+          sendToServer(code['json'], code['java']); // 서버 전송은 필요 시만
         },
       )
-      ..loadFlutterAsset('assets/blockly_editor.html'); // 📌 여기에 HTML 로딩
+      ..loadFlutterAsset('assets/blockly_editor.html');
   }
 
   void _getBlocklyCode() {
-    _controller.runJavaScript("window.postMessage('get_code');");
+    _controller.runJavaScript("window.postMessage('get_all');");
+  }
+
+  Future<void> sendToServer(String json, String java) async {
+    final url = Uri.parse('http://10.0.2.2:8080/api/block');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'json': json, 'java': java}),
+    );
+    print('서버 응답: ${response.body}');
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(title: Text('Flutter Blockly Sample')),
-        body: Column(
-          children: [
-            Expanded(
-              child: WebViewWidget(controller: _controller),
-            ),
-            ElevatedButton(
-              onPressed: _getBlocklyCode,
-              child: Text("코드 가져오기"),
-            ),
-          ],
-        ),
+    return Scaffold(
+      appBar: AppBar(title: Text('Blockly to Java & JSON')),
+      body: Column(
+        children: [
+          Expanded(child: WebViewWidget(controller: _controller)),
+          ElevatedButton(
+            onPressed: _getBlocklyCode,
+            child: Text("코드 가져오기 및 전송"),
+          ),
+        ],
       ),
     );
   }
