@@ -48,23 +48,15 @@
         return Blockly.JavaScript.workspaceToCode(workspace);
     }
 
-    function getJavaCode() {
-        let code = '';
-        const blocks = workspace.getTopBlocks(true);
-        blocks.forEach(block => {
-            if (block.type === 'controls_if') {
-                code += 'if (true) {\n  System.out.println("조건문");\n}\n';
-            }
-        });
-        return code;
+    function getJsonObject() {
+        return Blockly.serialization.workspaces.save(workspace);
     }
 
     window.addEventListener("message", (event) => {
         if (event.data === "get_all") {
             const result = {
-                json: getXmlJson(),       // XML 형식
+                json: getJsonObject(),       // XML 형식
                 javascript: getJavaScriptCode(), // JS Generator 결과
-                java: getJavaCode()       // 임시 Java Generator 결과
             };
             FlutterChannel.postMessage(JSON.stringify(result));
         }

@@ -1,7 +1,8 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:webview_flutter/webview_flutter.dart';
 
 void main() {
   runApp(MyApp());
@@ -25,7 +26,6 @@ class MobileBlocklyPage extends StatefulWidget {
 class _MobileBlocklyPageState extends State<MobileBlocklyPage> {
   late final WebViewController _controller;
   String? jsonCode;
-  String? javaCode;
 
   @override
   void initState() {
@@ -38,9 +38,7 @@ class _MobileBlocklyPageState extends State<MobileBlocklyPage> {
           final code = json.decode(message.message);
           setState(() {
             jsonCode = code['json'];
-            javaCode = code['java'];
             print('🌐 JavaScript 코드: ${code['javascript']}');
-            print('🧾 Java 코드: ${code['java']}');
             print('📦 JSON 코드: ${code['json']}');
           });
 
